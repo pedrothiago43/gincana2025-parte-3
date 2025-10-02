@@ -1593,48 +1593,73 @@
                 alert('Evento excluído com sucesso!');
             }
         }
-
-        async function addTeam() {
-            const nameInput = document.getElementById('newTeamName');
-            const colorSelect = document.getElementById('newTeamColor');
-            const categorySelect = document.getElementById('newTeamCategory');
-            
-            const name = nameInput.value.trim();
-            const color = colorSelect.value;
-            const category = categorySelect.value;
-            
-            if (!name) {
-                alert('Por favor, informe o nome da equipe.');
-                return;
-            }
-            
-            const existingTeam = Object.values(teams).find(team => 
-                team.name.toLowerCase() === name.toLowerCase()
-            );
-            
-            if (existingTeam) {
-                alert('Já existe uma equipe com este nome.');
-                return;
-            }
-            
-            const teamId = 'team_' + Date.now();
-            teams[teamId] = {
-                name: name,
-                color: color,
-                category: category,
-                score: 0,
-                pointsHistory: []
-            };
-            
-            await saveData();
-            updateUI();
-            
-            nameInput.value = '';
-            colorSelect.value = 'red';
-            categorySelect.value = '1';
-            
-            alert('Equipe adicionada com sucesso!');
+async function addTeam() {
+    const nameInput = document.getElementById('newTeamName');
+    const colorSelect = document.getElementById('newTeamColor');
+    const categorySelect = document.getElementById('newTeamCategory');
+    
+    const name = nameInput.value.trim();
+    const color = colorSelect.value;
+    const category = categorySelect.value;
+    
+    // Validações
+    if (!name) {
+        alert('Por favor, informe o nome da equipe.');
+        return;
+    }
+    
+    if (name.length < 2) {
+        alert('O nome da equipe deve ter pelo menos 2 caracteres.');
+        return;
+    }
+    
+    // Verificação melhorada de equipe existente
+    let teamExists = false;
+    
+    for (const teamId in teams) {
+        if (teams[teamId].name.toLowerCase() === name.toLowerCase()) {
+            teamExists = true;
+            break;
         }
+    }
+    
+    if (teamExists) {
+        alert('Já existe uma equipe com o nome "' + name + '". Por favor, escolha um nome diferente.');
+        return;
+    }
+    
+    try {
+        // Criar ID único para a equipe
+        const teamId = 'team_' + new Date().getTime() + '_' + Math.floor(Math.random() * 1000);
+        
+        // Adicionar a nova equipe
+        teams[teamId] = {
+            name: name,
+            color: color,
+            category: category,
+            score: 0,
+            pointsHistory: []
+        };
+        
+        // Salvar no Firebase
+        await saveData();
+        
+        // Atualizar a interface
+        updateUI();
+        
+        // Limpar o formulário
+        nameInput.value = '';
+        colorSelect.value = 'red';
+        categorySelect.value = '1';
+        
+        // Mensagem de sucesso
+        showNotification('✅ Equipe "' + name + '" adicionada com sucesso!', 'success');
+        
+    } catch (error) {
+        console.error('Erro ao adicionar equipe:', error);
+        alert('Erro ao adicionar equipe. Tente novamente.');
+    }
+}   }
 
         function deleteTeam(teamId) {
             if (confirm('Tem certeza que deseja excluir esta equipe? Todos os pontos serão perdidos.')) {
